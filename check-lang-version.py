@@ -4,26 +4,26 @@ import subprocess
 import json
 
 def list_matching_ecr_images(account_id, repository_pattern, tag_pattern, profile_name):
-    # プロファイルを指定してECRのクライアントを作成
+    # Create an ECR client by specifying a profile
     session = boto3.Session(profile_name=profile_name)
     ecr_client = session.client('ecr', region_name='ap-northeast-1')
 
     matching_images = []
 
-    # ECRリポジトリの一覧を取得
+    # Get a list of ECR repositories
     response = ecr_client.describe_repositories(registryId=account_id)
     #print(response)
 
-    # リポジトリごとに一致するイメージを検索
+    # Search for matching images by repository
     for repository in response['repositories']:
         repository_name = repository['repositoryName']
 
-        # リポジトリ名が指定した部分一致のパターンに一致するかチェック
+        # Check if the repository name matches the specified partial match pattern
         if re.search(repository_pattern, repository_name):
-            # リポジトリのイメージ一覧を取得
+            # Get a list of images in the repository
             image_response = ecr_client.describe_images(repositoryName=repository_name, registryId=account_id)
 
-            # イメージごとに一致するタグを検索
+            # Search for matching tags per image
             for image_detail in image_response['imageDetails']:
                 image_tags = image_detail['imageTags'] if 'imageTags' in image_detail else []
                 for tag in image_tags:
@@ -35,36 +35,36 @@ def list_matching_ecr_images(account_id, repository_pattern, tag_pattern, profil
 
 
 def pull_docker_image(image_uri):
-    # Dockerイメージをpull
+    # Pull Docker image
     cmd = f"docker pull {image_uri}"
     subprocess.run(cmd, shell=True)
 
 def syft_analyze(image_uri):
-    # syftコマンドを実行
+    # Execute syft command
     cmd = f"syft packages {image_uri} -o json"
     result = subprocess.run(cmd, capture_output=True, text=True, shell=True)
 
-    # syftの結果をJSON形式にパース
+    # Parsing syft results into JSON format
     output_json = result.stdout.strip()
     if output_json:
         try:
             packages_data = json.loads(output_json)
             print("Syft analysis result:")
-            # artifacts[].nameがnodeかgoで一致するものに絞り込み
+            # Narrow down to matches where artifacts[].name is node or go or java
             filtered_packages = [{'name': pkg['name'], 'version': pkg['version']} for pkg in packages_data.get('artifacts', []) if 'name' in pkg and pkg['name'] in ['java', 'go', 'node'] and 'version' in pkg]
             print(json.dumps({'artifacts': filtered_packages}, indent=2))
         except json.JSONDecodeError as e:
             print("JSONデータのパースに失敗しました。")
             print(e)
 
-# パターンを指定してECRのイメージを取得
-account_id = '599453524280'
-repository_pattern = r'test'  # 部分一致のパターンを指定
+# Get ECR image by specifying pattern
+account_id = '12345678' #FIXME
+repository_pattern = r'test'  # Specify a partial match pattern
 tag_pattern = r'^latest$'
-profile_name = 'frit'  # AWS CLIで設定したプロファイル名を指定
+profile_name = 'frit'  # Specify the profile name configured in AWS CLI
 matching_images = list_matching_ecr_images(account_id, repository_pattern, tag_pattern, profile_name)
 
-# Dockerイメージをpullしてsyftコマンドを実行
+# Pull Docker image and run syft command
 for image_uri in matching_images:
     print(f"Processing image: {image_uri}")
     pull_docker_image(image_uri)
