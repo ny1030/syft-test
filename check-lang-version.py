@@ -59,7 +59,7 @@ def syft_analyze(image_uri):
 
 # パターンを指定してECRのイメージを取得
 account_id = '599453524280'
-repository_pattern = r'core-eva'  # 部分一致のパターンを指定
+repository_pattern = r'test'  # 部分一致のパターンを指定
 tag_pattern = r'^latest$'
 profile_name = 'frit'  # AWS CLIで設定したプロファイル名を指定
 matching_images = list_matching_ecr_images(account_id, repository_pattern, tag_pattern, profile_name)
