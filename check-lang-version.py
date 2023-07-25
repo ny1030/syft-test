@@ -59,10 +59,10 @@ def syft_analyze(image_uri, csv_writer):
             print(e)
 
 # Get ECR image by specifying pattern
-account_id = '599453524280'
-repository_pattern = r'core-eva'  # Specify a partial match pattern
+account_id = 'XXXXXXX'
+repository_pattern = r'xxxxxxx'  # Specify a partial match pattern
 tag_pattern = r'^latest$'
-profile_name = 'frit'  # Specify the profile name configured in AWS CLI
+profile_name = 'xxxxxx'  # Specify the profile name configured in AWS CLI
 matching_images = list_matching_ecr_images(account_id, repository_pattern, tag_pattern, profile_name)
 
 # Output results to CSV file
